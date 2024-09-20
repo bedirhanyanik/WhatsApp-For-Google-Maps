@@ -1,0 +1,16 @@
+{
+    "manifest_version": 3,
+    "name": "WhatsApp Button for Google Maps",
+    "version": "1.0",
+    "description": "Adds a WhatsApp button next to shops' phone numbers on Google Maps. Also stores the informations about the shops",
+    "permissions": [
+      "activeTab",
+      "scripting"
+    ],
+    "content_scripts": [
+      {
+        "matches": ["*://www.google.com/maps/*"],
+        "js": ["content.js"]
+      }
+    ]
+}

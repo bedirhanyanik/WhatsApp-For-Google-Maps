@@ -41,7 +41,7 @@ const storeInfo = () => {
 }
 
 const downloadCSV = () => {
-    let csvContent = "Mağaza Adı,Telefon Numarası\n";
+    let csvContent = "Mağaza Adı,Telefon Numarası\n"; 
 
     storeArray.forEach(store => {
         csvContent += `${store.storeName},${store.phoneNumber}\n`;

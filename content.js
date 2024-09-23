@@ -1,7 +1,8 @@
-
 // Global variables
 let storeArray = [];
 let seenStores = new Set();
+let isScrolling = false;
+let scrollInterval;
 
 // Helper function to remove "GET" from store name
 function removeGETFromStoreName(storeName) {
@@ -14,10 +15,8 @@ function encodeCSV(str) {
 }
 
 const storeInfo = () => {
-    // Select all store containers
     const storeContainers = document.querySelectorAll('div.UaQhfb.fontBodyMedium');
 
-    // Match store name and phone number
     storeContainers.forEach(container => {
         let storeName = container.querySelector('.qBF1Pd.fontHeadlineSmall')?.textContent.trim();
         const phoneNumber = container.querySelector('span.UsdlK')?.textContent.trim();
@@ -87,6 +86,96 @@ const addCSVButton = () => {
     }
 };
 
+const addScrollButton = () => {
+    const body = document.querySelector('body.LoJzbe');
+    
+    if (body && !document.getElementById('scrollButton')) {
+        const scrollButton = document.createElement('button');
+        scrollButton.id = 'scrollButton';
+        scrollButton.textContent = 'Veri Çek';
+        scrollButton.style.cssText = `
+            position: fixed;
+            top: 50px;
+            right: 10px;
+            z-index: 1000;
+            padding: 8px 16px;
+            background-color: blue;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        `;
+
+        scrollButton.addEventListener('click', () => {
+            if (!isScrolling) {
+                console.log('Kaydırma başlatıldı!');
+                scrollAndFetchData();
+            }
+        });
+
+        body.appendChild(scrollButton);
+    }
+};
+
+const scrollAndFetchData = () => {
+    isScrolling = true;
+    let totalHeight = 0;
+    const distance = 100; 
+    const scrollDelay = 1000; // Kaydırma işleminin süresi
+
+    scrollInterval = setInterval(() => {
+        window.scrollBy(0, distance);
+        totalHeight += distance;
+
+        // Sayfanın sonuna ulaşıldığında yeni sayfaya geçme
+        if (totalHeight >= document.body.scrollHeight) {
+            // Burada yeni sayfayı yükleme kodunu ekleyin
+            window.scrollTo(0, 0); // Sayfayı en üste kaydır
+            totalHeight = 0; // Total height'ı sıfırla
+            // Yeni sayfaya geçtikten sonra storeInfo'yu çağır
+            setTimeout(() => {
+                storeInfo();
+            }, scrollDelay);
+        } else {
+            storeInfo();
+        }
+    }, scrollDelay);
+};
+
+const stopScrolling = () => {
+    clearInterval(scrollInterval);
+    isScrolling = false;
+    console.log('Kaydırma durduruldu.');
+    downloadCSV(); // Durdurulduğunda CSV indir
+};
+
+const addStopButton = () => {
+    const body = document.querySelector('body.LoJzbe');
+    
+    if (body && !document.getElementById('stopButton')) {
+        const stopButton = document.createElement('button');
+        stopButton.id = 'stopButton';
+        stopButton.textContent = 'Durdur';
+        stopButton.style.cssText = `
+            position: fixed;
+            top: 90px;
+            right: 10px;
+            z-index: 1000;
+            padding: 8px 16px;
+            background-color: #F44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        `;
+
+        stopButton.addEventListener('click', stopScrolling);
+        body.appendChild(stopButton);
+    }
+};
+
 const addWhatsAppIcons = () => {
     const phoneDivs = document.querySelectorAll('div.Io6YTe.fontBodyMedium.kR99db.fdkmkc');
     const iconUrl = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/767px-WhatsApp.svg.png';
@@ -137,6 +226,8 @@ const observer = new MutationObserver((mutations) => {
             setTimeout(() => {
                 addWhatsAppIcons();
                 addCSVButton();
+                addScrollButton();
+                addStopButton();
                 storeInfo();
             }, 2000);
             break;
@@ -151,11 +242,15 @@ if (document.readyState === 'loading') {
         setTimeout(() => {
             addWhatsAppIcons();
             addCSVButton();
+            addScrollButton();
+            addStopButton();
             storeInfo();
         }, 2000);
     });
 } else {
     addWhatsAppIcons();
     addCSVButton();
+    addScrollButton();
+    addStopButton();
     storeInfo();
 }

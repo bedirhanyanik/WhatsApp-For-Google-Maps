@@ -20,6 +20,7 @@ const storeInfo = () => {
     storeContainers.forEach(container => {
         let storeName = container.querySelector('.qBF1Pd.fontHeadlineSmall')?.textContent.trim();
         const phoneNumber = container.querySelector('span.UsdlK')?.textContent.trim();
+        const category = document.getElementById('product').value || 'Belirsiz';
         
         storeName = removeGETFromStoreName(storeName);
 
@@ -28,6 +29,7 @@ const storeInfo = () => {
         
             if (!seenStores.has(storeKey)) {
                 storeArray.push({
+                    category: category,
                     storeName: storeName,
                     phoneNumber: phoneNumber
                 });
@@ -40,10 +42,10 @@ const storeInfo = () => {
 }
 
 const downloadCSV = () => {
-    let csvContent = "Mağaza Adı,Telefon Numarası\n"; 
+    let csvContent = "Kategori,Mağaza Adı,Telefon Numarası\n"; 
 
     storeArray.forEach(store => {
-        csvContent += `${store.storeName},${store.phoneNumber}\n`;
+        csvContent += `${store.category},${store.storeName},${store.phoneNumber}\n`;
     });
 
     const encodedUri = encodeCSV(csvContent);
@@ -77,6 +79,7 @@ const addFilterForm = () => {
             <input type="text" id="product" placeholder="Aranacak Kelime" style="margin-bottom: 3px; width: 100%; font-size: 12px;">
             <input type="text" id="city" placeholder="İl" style="margin-bottom: 3px; width: 100%; font-size: 12px;">
             <input type="text" id="district" placeholder="İlçe" style="margin-bottom: 3px; width: 100%; font-size: 12px;">
+            <input type="text" id="neighborhood" placeholder="Mahalle" style="margin-bottom: 3px; width: 100%; font-size: 12px;">
         `;
 
         body.appendChild(filterForm);

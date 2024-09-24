@@ -164,40 +164,85 @@ const performSearch = (product, city, district) => {
     }
 }
 
-const scrollAndFetchData = () => {
-    isScrolling = true;
-    const scrollContainer = document.querySelector('div[role="feed"]');
-    let lastScrollHeight = 0;
-
-    const scrollAndCheck = () => {
-        if (!isScrolling) return;
-
-        if (scrollContainer) {
-            scrollContainer.scrollTop = scrollContainer.scrollHeight;
-            storeInfo();
-
-            // Check if we've reached the bottom
-            if (scrollContainer.scrollHeight === lastScrollHeight) {
-                console.log("Tüm veriler çekildi veya sayfa sonuna ulaşıldı.");
-                return;
-            }
-
-            lastScrollHeight = scrollContainer.scrollHeight;
-        } else {
-            window.scrollTo(0, document.body.scrollHeight);
-            storeInfo();
-
-            // Check if we've reached the bottom
-            if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight - 2) {
-                console.log("Tüm veriler çekildi veya sayfa sonuna ulaşıldı.");
-                return;
-            }
+const waitForElementLoad = (selector, timeout = 10000) => {
+    return new Promise((resolve, reject) => {
+        if (document.querySelector(selector)) {
+            return resolve(document.querySelector(selector));
         }
 
-        setTimeout(scrollAndCheck, 1000);  // Adjust this delay as needed
-    };
+        const observer = new MutationObserver(() => {
+            if (document.querySelector(selector)) {
+                resolve(document.querySelector(selector));
+                observer.disconnect();
+            }
+        });
 
-    scrollAndCheck();
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        setTimeout(() => {
+            observer.disconnect();
+            reject(new Error(`Timeout waiting for ${selector}`));
+        }, timeout);
+    });
+};
+
+const scrollAndFetchData = async () => {
+    isScrolling = true;
+    let lastScrollHeight = 0;
+    let noChangeCount = 0;
+    const maxNoChangeCount = 5; // Adjust this value as needed
+
+    try {
+        const scrollContainer = await waitForElementLoad('div[role="feed"]');
+        
+        const scrollAndCheck = () => {
+            if (!isScrolling) return;
+
+            if (scrollContainer) {
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                storeInfo();
+
+                // Check if we've reached the bottom
+                if (scrollContainer.scrollHeight === lastScrollHeight) {
+                    noChangeCount++;
+                    if (noChangeCount >= maxNoChangeCount) {
+                        console.log("Tüm veriler çekildi veya sayfa sonuna ulaşıldı.");
+                        isScrolling = false;
+                        return;
+                    }
+                } else {
+                    noChangeCount = 0;
+                }
+
+                lastScrollHeight = scrollContainer.scrollHeight;
+            } else {
+                window.scrollTo(0, document.body.scrollHeight);
+                storeInfo();
+
+                // Check if we've reached the bottom
+                if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight - 2) {
+                    noChangeCount++;
+                    if (noChangeCount >= maxNoChangeCount) {
+                        console.log("Tüm veriler çekildi veya sayfa sonuna ulaşıldı.");
+                        isScrolling = false;
+                        return;
+                    }
+                } else {
+                    noChangeCount = 0;
+                }
+            }
+
+            setTimeout(scrollAndCheck, 2000);  // Increased delay to 2 seconds
+        };
+
+        scrollAndCheck();
+    } catch (error) {
+        console.error("Error in scrollAndFetchData:", error);
+        isScrolling = false;
+    }
 };
 
 const stopScrolling = () => {

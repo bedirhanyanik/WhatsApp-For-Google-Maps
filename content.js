@@ -55,6 +55,34 @@ const downloadCSV = () => {
     document.body.removeChild(link);
 }
 
+const addFilterForm = () => {
+    const body = document.querySelector('body.LoJzbe');
+    
+    if (body && !document.getElementById('filterForm')) {
+        const filterForm = document.createElement('div');
+        filterForm.id = 'filterForm';
+        filterForm.style.cssText = `
+            position: fixed;
+            top: 130px;
+            right: 10px;
+            z-index: 1000;
+            padding: 5px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 150px;
+        `;
+
+        filterForm.innerHTML = `
+            <input type="text" id="product" placeholder="Aranacak Kelime" style="margin-bottom: 3px; width: 100%; font-size: 12px;">
+            <input type="text" id="city" placeholder="İl" style="margin-bottom: 3px; width: 100%; font-size: 12px;">
+            <input type="text" id="district" placeholder="İlçe" style="margin-bottom: 3px; width: 100%; font-size: 12px;">
+        `;
+
+        body.appendChild(filterForm);
+    }
+};
+
 const addCSVButton = () => {
     const body = document.querySelector('body.LoJzbe');
     
@@ -78,7 +106,6 @@ const addCSVButton = () => {
 
         csvButton.addEventListener('click', () => {
             console.log('CSV İndir butonu tıklandı!');
-            storeInfo();
             downloadCSV();
         });
 
@@ -110,7 +137,10 @@ const addScrollButton = () => {
         scrollButton.addEventListener('click', () => {
             if (!isScrolling) {
                 console.log('Kaydırma başlatıldı!');
-                scrollAndFetchData();
+                const product = document.getElementById('product').value;
+                const city = document.getElementById('city').value;
+                const district = document.getElementById('district').value;
+                performSearch(product, city, district);
             }
         });
 
@@ -118,36 +148,62 @@ const addScrollButton = () => {
     }
 };
 
+const performSearch = (product, city, district) => {
+    const searchBox = document.querySelector('input#searchboxinput');
+    if (searchBox) {
+        const searchQuery = `${product} ${city} ${district}`.trim();
+        searchBox.value = searchQuery;
+        searchBox.dispatchEvent(new Event('input', { bubbles: true }));
+        setTimeout(() => {
+            const searchButton = document.querySelector('button#searchbox-searchbutton');
+            if (searchButton) {
+                searchButton.click();
+                setTimeout(scrollAndFetchData, 2000);  // Wait for search results to load
+            }
+        }, 1000);
+    }
+}
+
 const scrollAndFetchData = () => {
     isScrolling = true;
-    let totalHeight = 0;
-    const distance = 100; 
-    const scrollDelay = 1000; // Kaydırma işleminin süresi
+    const scrollContainer = document.querySelector('div[role="feed"]');
+    let lastScrollHeight = 0;
 
-    scrollInterval = setInterval(() => {
-        window.scrollBy(0, distance);
-        totalHeight += distance;
+    const scrollAndCheck = () => {
+        if (!isScrolling) return;
 
-        // Sayfanın sonuna ulaşıldığında yeni sayfaya geçme
-        if (totalHeight >= document.body.scrollHeight) {
-            // Burada yeni sayfayı yükleme kodunu ekleyin
-            window.scrollTo(0, 0); // Sayfayı en üste kaydır
-            totalHeight = 0; // Total height'ı sıfırla
-            // Yeni sayfaya geçtikten sonra storeInfo'yu çağır
-            setTimeout(() => {
-                storeInfo();
-            }, scrollDelay);
-        } else {
+        if (scrollContainer) {
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
             storeInfo();
+
+            // Check if we've reached the bottom
+            if (scrollContainer.scrollHeight === lastScrollHeight) {
+                console.log("Tüm veriler çekildi veya sayfa sonuna ulaşıldı.");
+                return;
+            }
+
+            lastScrollHeight = scrollContainer.scrollHeight;
+        } else {
+            window.scrollTo(0, document.body.scrollHeight);
+            storeInfo();
+
+            // Check if we've reached the bottom
+            if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight - 2) {
+                console.log("Tüm veriler çekildi veya sayfa sonuna ulaşıldı.");
+                return;
+            }
         }
-    }, scrollDelay);
+
+        setTimeout(scrollAndCheck, 1000);  // Adjust this delay as needed
+    };
+
+    scrollAndCheck();
 };
 
 const stopScrolling = () => {
-    clearInterval(scrollInterval);
     isScrolling = false;
     console.log('Kaydırma durduruldu.');
-    downloadCSV(); // Durdurulduğunda CSV indir
+    downloadCSV(); 
 };
 
 const addStopButton = () => {
@@ -210,47 +266,23 @@ const addWhatsAppIcons = () => {
 
             div.appendChild(icon);
 
-            console.log(`İkon eklendi: ${text}`);
+            console.log(`İkon başarıyla eklendi: ${phoneNumber}`);
 
-            icon.addEventListener('click', (e) => {
-                e.stopPropagation();
-                window.open(`https://wa.me/${phoneNumber}`, '_blank');
+            icon.addEventListener('click', () => {
+                const waLink = `https://wa.me/${phoneNumber}`;
+                window.open(waLink, '_blank');
             });
         }
     });
 };
-    
-const observer = new MutationObserver((mutations) => {
-    for (let mutation of mutations) {
-        if (mutation.type === 'childList') {
-            setTimeout(() => {
-                addWhatsAppIcons();
-                addCSVButton();
-                addScrollButton();
-                addStopButton();
-                storeInfo();
-            }, 2000);
-            break;
-        }
-    }
-});
 
-observer.observe(document.querySelector('div[role="main"]') || document.body, { childList: true, subtree: true });
+// MutationObserver for dynamically added WhatsApp icons
+const observer = new MutationObserver(addWhatsAppIcons);
+observer.observe(document.body, { childList: true, subtree: true });
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            addWhatsAppIcons();
-            addCSVButton();
-            addScrollButton();
-            addStopButton();
-            storeInfo();
-        }, 2000);
-    });
-} else {
-    addWhatsAppIcons();
-    addCSVButton();
-    addScrollButton();
-    addStopButton();
-    storeInfo();
-}
+// Initialize form, buttons, and icons on page load
+addFilterForm();
+addCSVButton();
+addScrollButton();
+addStopButton();
+addWhatsAppIcons();

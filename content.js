@@ -20,18 +20,42 @@ const storeInfo = () => {
     storeContainers.forEach(container => {
         let storeName = container.querySelector('.qBF1Pd.fontHeadlineSmall')?.textContent.trim();
         const phoneNumber = container.querySelector('span.UsdlK')?.textContent.trim();
-        const category = document.getElementById('product').value || 'Belirsiz';
+        
+        // Updated address and category extraction
+        const addressElement = container.querySelector('.W4Efsd:nth-child(1)');
+        let fullAddress = addressElement ? addressElement.textContent.trim() : 'Bilgi bulunamadı';
+        
+        // Remove wheelchair icon if present
+        fullAddress = fullAddress.replace(/^[^\w\d]*/, '');
+        
+        const [category, address] = fullAddress.split('·').map(item => item.trim());
         
         storeName = removeGETFromStoreName(storeName);
+
+        // Extract rating information
+        const ratingElement = container.querySelector('.ZkP5Je');
+        let rating = 'N/A';
+        let reviewCount = 'N/A';
+        if (ratingElement) {
+            const ratingText = ratingElement.textContent.trim();
+            const ratingMatch = ratingText.match(/(\d+(?:,\d+)?)\s*(\([^)]+\))?/);
+            if (ratingMatch) {
+                rating = ratingMatch[1].replace(',', '.');
+                reviewCount = ratingMatch[2] ? ratingMatch[2].replace(/[()]/g, '') : 'N/A';
+            }
+        }
 
         if (storeName && phoneNumber) {
             const storeKey = `${storeName} | ${phoneNumber}`;
         
             if (!seenStores.has(storeKey)) {
                 storeArray.push({
-                    category: category,
+                    category: category || 'Belirsiz',
                     storeName: storeName,
-                    phoneNumber: phoneNumber
+                    phoneNumber: phoneNumber,
+                    address: address || fullAddress,
+                    rating: rating,
+                    reviewCount: reviewCount
                 });
                 seenStores.add(storeKey);
             }
@@ -42,10 +66,10 @@ const storeInfo = () => {
 }
 
 const downloadCSV = () => {
-    let csvContent = "Kategori,Mağaza Adı,Telefon Numarası\n"; 
+    let csvContent = "Kategori,Mağaza Adı,Telefon Numarası,Adres,Puanlama\n"; 
 
     storeArray.forEach(store => {
-        csvContent += `${store.category},${store.storeName},${store.phoneNumber}\n`;
+        csvContent += `${store.category},${store.storeName},${store.phoneNumber},${store.address},${store.rating} (${store.reviewCount})\n`;
     });
 
     const encodedUri = encodeCSV(csvContent);

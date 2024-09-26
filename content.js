@@ -67,10 +67,10 @@ const storeInfo = () => {
 }
 
 const downloadCSV = () => {
-    let csvContent = "Kategori,Mağaza Adı,Telefon Numarası,Adres,Puanlama(Yorum)\n"; 
+    let csvContent = "Kategori, Mağaza Adı, Telefon Numarası, Adres, Puanlama(Yorum)\n"; 
 
     storeArray.forEach(store => {
-        csvContent += `${store.category},${store.storeName},${store.phoneNumber},${store.address},${store.rating} (${store.reviewCount})\n`;
+        csvContent += `${store.category}, ${store.storeName}, ${store.phoneNumber}, ${store.address}, ${store.rating} (${store.reviewCount})\n`;
     });
 
     const encodedUri = encodeCSV(csvContent);
@@ -90,7 +90,7 @@ const addFilterForm = () => {
         filterForm.id = 'filterForm';
         filterForm.style.cssText = `
             position: fixed;
-            top: 130px;
+            top: 90px;
             right: 10px;
             z-index: 1000;
             padding: 5px;
@@ -111,36 +111,6 @@ const addFilterForm = () => {
     }
 };
 
-const addCSVButton = () => {
-    const body = document.querySelector('body.LoJzbe');
-    
-    if (body && !document.getElementById('csvButton')) {
-        const csvButton = document.createElement('button');
-        csvButton.id = 'csvButton';
-        csvButton.textContent = 'CSV İndir';
-        csvButton.style.cssText = `
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
-            padding: 8px 16px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: bold;
-        `;
-
-        csvButton.addEventListener('click', () => {
-            console.log('CSV İndir butonu tıklandı!');
-            downloadCSV();
-        });
-
-        body.appendChild(csvButton);
-    }
-};
-
 const addScrollButton = () => {
     const body = document.querySelector('body.LoJzbe');
     
@@ -150,7 +120,7 @@ const addScrollButton = () => {
         scrollButton.textContent = 'Veri Çek';
         scrollButton.style.cssText = `
             position: fixed;
-            top: 50px;
+            top: 10px;
             right: 10px;
             z-index: 1000;
             padding: 8px 16px;
@@ -289,7 +259,7 @@ const addStopButton = () => {
         stopButton.textContent = 'Durdur';
         stopButton.style.cssText = `
             position: fixed;
-            top: 90px;
+            top: 50px;
             right: 10px;
             z-index: 1000;
             padding: 8px 16px;
@@ -356,7 +326,6 @@ observer.observe(document.body, { childList: true, subtree: true });
 
 // Initialize form, buttons, and icons on page load
 addFilterForm();
-addCSVButton();
 addScrollButton();
 addStopButton();
 addWhatsAppIcons();

@@ -26,7 +26,8 @@ const storeInfo = () => {
         let fullAddress = addressElement ? addressElement.textContent.trim() : 'Bilgi bulunamadı';
         
         // Remove wheelchair icon if present
-        fullAddress = fullAddress.replace(/^[^\w\d]*/, '');
+        fullAddress = fullAddress.replace(/^[^\p{L}\d]*/u, '');
+
         
         const [category, address] = fullAddress.split('·').map(item => item.trim());
         
@@ -66,7 +67,7 @@ const storeInfo = () => {
 }
 
 const downloadCSV = () => {
-    let csvContent = "Kategori,Mağaza Adı,Telefon Numarası,Adres,Puanlama\n"; 
+    let csvContent = "Kategori,Mağaza Adı,Telefon Numarası,Adres,Puanlama(Yorum)\n"; 
 
     storeArray.forEach(store => {
         csvContent += `${store.category},${store.storeName},${store.phoneNumber},${store.address},${store.rating} (${store.reviewCount})\n`;
@@ -167,7 +168,8 @@ const addScrollButton = () => {
                 const product = document.getElementById('product').value;
                 const city = document.getElementById('city').value;
                 const district = document.getElementById('district').value;
-                performSearch(product, city, district);
+                const neighborhood = document.getElementById('neighborhood').value;
+                performSearch(product, city, district, neighborhood);
             }
         });
 
@@ -175,10 +177,10 @@ const addScrollButton = () => {
     }
 };
 
-const performSearch = (product, city, district) => {
+const performSearch = (product, city, district, neighborhood) => {
     const searchBox = document.querySelector('input#searchboxinput');
     if (searchBox) {
-        const searchQuery = `${product} ${city} ${district}`.trim();
+        const searchQuery = `${product} ${city} ${district} ${neighborhood}`.trim();
         searchBox.value = searchQuery;
         searchBox.dispatchEvent(new Event('input', { bubbles: true }));
         setTimeout(() => {

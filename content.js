@@ -320,35 +320,69 @@ const addWhatsAppIcons = () => {
     });
 };
 
-// Yeni fonksiyon: Toplu WhatsApp mesajı gönderme
+const sendMessageWithMaytapi = async (phoneNumber, message) => {
+    const productId = 'f8dada35-d900-4c91-95a0-85f0f6938fd0'; // Replace with your Maytapi product ID
+    const apiToken = '8a52edbc-d86f-46e7-b66c-a1458767ec4c'; // Replace with your Maytapi API token
+    const phoneId = '58279'; // Replace with your Maytapi phone ID
+
+    const url = `https://api.maytapi.com/api/${productId}/${phoneId}/sendMessage`;
+
+    const payload = {
+        to_number: phoneNumber,
+        message: message,
+        type: "text"
+    };
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-maytapi-key': apiToken
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(`Message sent successfully to ${phoneNumber}`);
+        return data;
+    } catch (error) {
+        console.error(`Failed to send message to ${phoneNumber}:`, error);
+    }
+};
+
+// Updated function to send bulk messages using Maytapi
 const sendBulkWhatsAppMessages = async (message) => {
     for (const store of storeArray) {
         let phoneNumber = store.phoneNumber.replace(/[^0-9]/g, '');
         
         if (phoneNumber.length === 10) {
-            phoneNumber = '+90' + phoneNumber;
+            phoneNumber = '90' + phoneNumber;
         } else if (phoneNumber.length === 11 && phoneNumber.startsWith('0')) {
-            phoneNumber = '+90' + phoneNumber.slice(1);
+            phoneNumber = '90' + phoneNumber.slice(1);
         }
 
-        if (!phoneNumber.startsWith('+')) {
-            console.error('Geçersiz numara formatı:', phoneNumber);
+        if (phoneNumber.length !== 12 || !phoneNumber.startsWith('90')) {
+            console.error('Invalid phone number format:', phoneNumber);
             continue;
         }
 
-        // Eğer bu numaraya daha önce mesaj gönderilmemişse
+        // If this number hasn't been messaged before
         if (!sentMessages.has(phoneNumber)) {
-            const waLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-            window.open(waLink, '_blank');
+            await sendMessageWithMaytapi(phoneNumber, message);
             
-            // Mesajın gönderildiğini işaretle
+            // Mark the message as sent
             sentMessages.add(phoneNumber);
             
-            // WhatsApp'ın açılması ve mesajın gönderilmesi için biraz bekle
-            await new Promise(resolve => setTimeout(resolve, 5000));
+            // Wait a bit before sending the next message to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
     }
-    console.log('Toplu mesaj gönderme işlemi tamamlandı.');
+    console.log('Bulk messaging process completed.');
 };
 
 // Yeni buton: Toplu WhatsApp mesajı gönderme

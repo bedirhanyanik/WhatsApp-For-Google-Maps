@@ -3,6 +3,7 @@ let storeArray = [];
 let seenStores = new Set();
 let isScrolling = false;
 let scrollInterval;
+let sentMessages = new Set(); // Mesaj gönderilen numaraları takip etmek için
 
 // Helper function to remove "GET" from store name
 function removeGETFromStoreName(storeName) {
@@ -28,7 +29,6 @@ const storeInfo = () => {
         // Remove wheelchair icon if present
         fullAddress = fullAddress.replace(/^[^\p{L}\d]*/u, '');
 
-        
         const [category, address] = fullAddress.split('·').map(item => item.trim());
         
         storeName = removeGETFromStoreName(storeName);
@@ -320,6 +320,70 @@ const addWhatsAppIcons = () => {
     });
 };
 
+// Yeni fonksiyon: Toplu WhatsApp mesajı gönderme
+const sendBulkWhatsAppMessages = async (message) => {
+    for (const store of storeArray) {
+        let phoneNumber = store.phoneNumber.replace(/[^0-9]/g, '');
+        
+        if (phoneNumber.length === 10) {
+            phoneNumber = '+90' + phoneNumber;
+        } else if (phoneNumber.length === 11 && phoneNumber.startsWith('0')) {
+            phoneNumber = '+90' + phoneNumber.slice(1);
+        }
+
+        if (!phoneNumber.startsWith('+')) {
+            console.error('Geçersiz numara formatı:', phoneNumber);
+            continue;
+        }
+
+        // Eğer bu numaraya daha önce mesaj gönderilmemişse
+        if (!sentMessages.has(phoneNumber)) {
+            const waLink = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+            window.open(waLink, '_blank');
+            
+            // Mesajın gönderildiğini işaretle
+            sentMessages.add(phoneNumber);
+            
+            // WhatsApp'ın açılması ve mesajın gönderilmesi için biraz bekle
+            await new Promise(resolve => setTimeout(resolve, 5000));
+        }
+    }
+    console.log('Toplu mesaj gönderme işlemi tamamlandı.');
+};
+
+// Yeni buton: Toplu WhatsApp mesajı gönderme
+const addSendBulkMessageButton = () => {
+    const body = document.querySelector('body.LoJzbe');
+    
+    if (body && !document.getElementById('sendBulkMessageButton')) {
+        const sendBulkMessageButton = document.createElement('button');
+        sendBulkMessageButton.id = 'sendBulkMessageButton';
+        sendBulkMessageButton.textContent = 'Toplu Mesaj Gönder';
+        sendBulkMessageButton.style.cssText = `
+            position: fixed;
+            top: 200px;
+            right: 10px;
+            z-index: 1000;
+            padding: 8px 16px;
+            background-color: #25D366;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        `;
+
+        sendBulkMessageButton.addEventListener('click', () => {
+            const message = prompt('Göndermek istediğiniz mesajı girin:');
+            if (message) {
+                sendBulkWhatsAppMessages(message);
+            }
+        });
+
+        body.appendChild(sendBulkMessageButton);
+    }
+};
+
 // MutationObserver for dynamically added WhatsApp icons
 const observer = new MutationObserver(addWhatsAppIcons);
 observer.observe(document.body, { childList: true, subtree: true });
@@ -329,3 +393,40 @@ addFilterForm();
 addScrollButton();
 addStopButton();
 addWhatsAppIcons();
+addSendBulkMessageButton(); // Yeni eklenen toplu mesaj gönderme butonu
+
+// Yeni fonksiyon: Tüm numaralara gönderilen mesajları temizle
+const clearSentMessages = () => {
+    sentMessages.clear();
+    console.log('Gönderilen mesaj geçmişi temizlendi.');
+};
+
+// Yeni buton: Gönderilen mesaj geçmişini temizleme
+const addClearSentMessagesButton = () => {
+    const body = document.querySelector('body.LoJzbe');
+    
+    if (body && !document.getElementById('clearSentMessagesButton')) {
+        const clearSentMessagesButton = document.createElement('button');
+        clearSentMessagesButton.id = 'clearSentMessagesButton';
+        clearSentMessagesButton.textContent = 'Mesaj Geçmişini Temizle';
+        clearSentMessagesButton.style.cssText = `
+            position: fixed;
+            top: 240px;
+            right: 10px;
+            z-index: 1000;
+            padding: 8px 16px;
+            background-color: #FFA500;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        `;
+
+        clearSentMessagesButton.addEventListener('click', clearSentMessages);
+        body.appendChild(clearSentMessagesButton);
+    }
+};
+
+// Initialize the new clear sent messages button
+addClearSentMessagesButton();
